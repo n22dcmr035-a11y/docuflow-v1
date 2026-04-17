@@ -8,6 +8,7 @@ import { PdfReader } from '@/components/reader/PdfReader';
 import { useReadingProgress } from '@/hooks/useReadingProgress';
 import { useAnnotations } from '@/hooks/useAnnotations';
 import { Button } from '@/components/ui/Button';
+import { ProgressBar } from '@/components/ui/ProgressBar';
 import type { Document } from '@/types';
 import { DEMO_DOCS } from '@/lib/demoData';
 
@@ -21,9 +22,25 @@ export default function ReadPage() {
   const [doc, setDoc] = useState<Document | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [scrollPct, setScrollPct] = useState(0);
 
   const { loadAnnotations } = useAnnotations(actualDocId);
   useReadingProgress(actualDocId);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const el = document.documentElement;
+      const scrolled = el.scrollTop;
+      const total = el.scrollHeight - el.clientHeight;
+      setScrollPct(total > 0 ? (scrolled / total) * 100 : 0);
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Run once on load just in case
+    handleScroll();
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -106,6 +123,11 @@ export default function ReadPage() {
           <span className="ml-auto text-xs uppercase tracking-widest text-[#b0a090] font-sans">
             {doc.file_type}
           </span>
+        </div>
+        
+        {/* Scroll Progress Bar at the bottom edge of the header */}
+        <div className="absolute bottom-0 left-0 w-full">
+          <ProgressBar value={scrollPct} color={doc.cover_color} height={3} animated={false} />
         </div>
       </header>
 
