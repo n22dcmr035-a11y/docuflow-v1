@@ -1,9 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Button } from '@/components/ui/Button';
 
-// react-pdf uses DOMMatrix and canvas APIs that don't exist in Node.js/SSR
 const PdfReaderClient = dynamic(
   () => import('./PdfReaderClient').then((m) => m.PdfReaderClient),
   {
@@ -18,8 +16,9 @@ const PdfReaderClient = dynamic(
 
 interface PdfReaderProps {
   url: string;
+  documentId: string;
 }
 
-export function PdfReader({ url }: PdfReaderProps) {
-  return <PdfReaderClient url={url} />;
+export function PdfReader({ url, documentId }: PdfReaderProps) {
+  return <PdfReaderClient url={url} documentId={documentId} />;
 }

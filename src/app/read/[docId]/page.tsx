@@ -131,12 +131,16 @@ export default function ReadPage() {
         </div>
       </header>
 
-      {/* Main reading area */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
+      {/* Main reading area — wider for PDF to fit annotations panel */}
+      <main className={`mx-auto px-4 sm:px-6 py-12 ${
+        doc.file_type === 'pdf' ? 'max-w-7xl' : 'max-w-4xl'
+      }`}>
         {doc.file_type === 'docx' && doc.parsed_html ? (
           <DocxReader html={doc.parsed_html} documentId={doc.id} />
         ) : doc.file_type === 'pdf' ? (
-          pdfUrl ? <PdfReader url={pdfUrl} /> : <div className="text-center py-24 text-[#b0a090] font-sans text-sm">PDF preview is not available in Demo Mode. Connect Supabase to upload and view real PDFs.</div>
+          pdfUrl
+            ? <PdfReader url={pdfUrl} documentId={doc.id} />
+            : <div className="text-center py-24 text-[#b0a090] font-sans text-sm">PDF preview is not available in Demo Mode.</div>
         ) : (
           <div className="text-center py-24 text-[#b0a090] font-sans text-sm">
             Could not load document content.
