@@ -359,8 +359,11 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
   return (
     <div className="flex gap-3 items-start">
 
-      {/* Far-left toggle tabs (show/hide sidebars) */}
-      <div className="flex flex-col gap-2 sticky top-[62px] flex-shrink-0">
+      {/* Left column: tabs + panels — all sticky together */}
+      <div className="sticky top-[62px] flex gap-2 flex-shrink-0 items-start max-h-[calc(100vh-80px)]">
+
+        {/* Vertical toggle tabs */}
+        <div className="flex flex-col gap-2 flex-shrink-0">
         {/* TOC tab — only when PDF has outline */}
         {toc.length > 0 && (
           <button
@@ -393,65 +396,67 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
             <span className="text-[9px] font-semibold uppercase tracking-wider" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Trang</span>
           </button>
         )}
-      </div>
+        </div>
 
-      {/* Left TOC */}
-      <AnimatePresence initial={false}>
-        {tocOpen && toc.length > 0 && (
-          <motion.div key="toc" initial={{ width: 0, opacity: 0 }} animate={{ width: 216, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 36 }} className="flex-shrink-0 overflow-hidden">
-            <div className="w-[216px] sticky top-[62px] max-h-[calc(100vh-80px)] overflow-y-auto bg-white border border-[#e8e0d0] rounded-2xl shadow-sm">
-              <div className="px-3 pt-3 pb-2 border-b border-[#f0ebe0] flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-[#3d2f20] uppercase tracking-wider font-sans">Mục lục</span>
-                <button onClick={() => setTocOpen(false)} className="text-[#c0b0a0] hover:text-[#6b5744] text-xs">✕</button>
+        {/* Left TOC panel */}
+        <AnimatePresence initial={false}>
+          {tocOpen && toc.length > 0 && (
+            <motion.div key="toc" initial={{ width: 0, opacity: 0 }} animate={{ width: 216, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 36 }} className="flex-shrink-0 overflow-hidden">
+              <div className="w-[216px] max-h-[calc(100vh-80px)] overflow-y-auto bg-white border border-[#e8e0d0] rounded-2xl shadow-sm">
+                <div className="px-3 pt-3 pb-2 border-b border-[#f0ebe0] flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[#3d2f20] uppercase tracking-wider font-sans">Mục lục</span>
+                  <button onClick={() => setTocOpen(false)} className="text-[#c0b0a0] hover:text-[#6b5744] text-xs">✕</button>
+                </div>
+                <ul className="py-2 px-1">{toc.map((item, i) => <TocNode key={i} item={item} />)}</ul>
               </div>
-              <ul className="py-2 px-1">{toc.map((item, i) => <TocNode key={i} item={item} />)}</ul>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Left: Page Navigator (below TOC) */}
-      <AnimatePresence initial={false}>
-        {pageNavOpen && numPages > 0 && (
-          <motion.div key="pagenav" initial={{ width: 0, opacity: 0 }} animate={{ width: 180, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 36 }} className="flex-shrink-0 overflow-hidden">
-            <div className="w-[180px] sticky top-[62px] max-h-[calc(100vh-80px)] overflow-y-auto bg-white border border-[#e8e0d0] rounded-2xl shadow-sm">
-              <div className="px-3 pt-3 pb-2 border-b border-[#f0ebe0] flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-[#3d2f20] uppercase tracking-wider font-sans">Trang</span>
-                <button onClick={() => setPageNavOpen(false)} className="text-[#c0b0a0] hover:text-[#6b5744] text-xs">✕</button>
-              </div>
-              {toc.length > 0 && (
-                <div className="border-b border-[#f0ebe0] py-2 px-2">
-                  <p className="text-[10px] uppercase tracking-wider text-[#b0a090] px-1 mb-1 font-sans">Chương</p>
-                  {toc.slice(0, 20).map((item, i) => (
-                    <button key={i} onClick={() => scrollToPage(item.pageNum)}
-                      className="w-full text-left flex items-baseline gap-1 px-1 py-0.5 rounded-lg hover:bg-[#f5f0e8] transition-colors group">
-                      <span className="flex-1 text-[11px] text-[#6b5744] group-hover:text-[#3d2f20] line-clamp-1">{item.title}</span>
-                      <span className="text-[9px] text-[#c0b0a0] flex-shrink-0">{item.pageNum}</span>
-                    </button>
-                  ))}
+        {/* Left: Page Navigator */}
+        <AnimatePresence initial={false}>
+          {pageNavOpen && numPages > 0 && (
+            <motion.div key="pagenav" initial={{ width: 0, opacity: 0 }} animate={{ width: 180, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 36 }} className="flex-shrink-0 overflow-hidden">
+              <div className="w-[180px] max-h-[calc(100vh-80px)] overflow-y-auto bg-white border border-[#e8e0d0] rounded-2xl shadow-sm">
+                <div className="px-3 pt-3 pb-2 border-b border-[#f0ebe0] flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[#3d2f20] uppercase tracking-wider font-sans">Trang</span>
+                  <button onClick={() => setPageNavOpen(false)} className="text-[#c0b0a0] hover:text-[#6b5744] text-xs">✕</button>
                 </div>
-              )}
-              <div className="p-2">
-                <p className="text-[10px] uppercase tracking-wider text-[#b0a090] px-1 mb-2 font-sans">Tất cả trang</p>
-                <div className="grid grid-cols-4 gap-1">
-                  {Array.from({ length: numPages }, (_, i) => i + 1).map(p => (
-                    <button key={p} onClick={() => scrollToPage(p)}
-                      className="aspect-square flex items-center justify-center rounded-lg text-[10px] font-sans font-medium transition-all"
-                      style={{
-                        backgroundColor: p === currentPage ? '#3d2f20' : '#f5f0e8',
-                        color: p === currentPage ? 'white' : '#6b5744',
-                        transform: p === currentPage ? 'scale(1.1)' : 'scale(1)',
-                      }}
-                    >{p}</button>
-                  ))}
+                {toc.length > 0 && (
+                  <div className="border-b border-[#f0ebe0] py-2 px-2">
+                    <p className="text-[10px] uppercase tracking-wider text-[#b0a090] px-1 mb-1 font-sans">Chương</p>
+                    {toc.slice(0, 20).map((item, i) => (
+                      <button key={i} onClick={() => scrollToPage(item.pageNum)}
+                        className="w-full text-left flex items-baseline gap-1 px-1 py-0.5 rounded-lg hover:bg-[#f5f0e8] transition-colors group">
+                        <span className="flex-1 text-[11px] text-[#6b5744] group-hover:text-[#3d2f20] line-clamp-1">{item.title}</span>
+                        <span className="text-[9px] text-[#c0b0a0] flex-shrink-0">{item.pageNum}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="p-2">
+                  <p className="text-[10px] uppercase tracking-wider text-[#b0a090] px-1 mb-2 font-sans">Tất cả trang</p>
+                  <div className="grid grid-cols-4 gap-1">
+                    {Array.from({ length: numPages }, (_, i) => i + 1).map(p => (
+                      <button key={p} onClick={() => scrollToPage(p)}
+                        className="aspect-square flex items-center justify-center rounded-lg text-[10px] font-sans font-medium transition-all"
+                        style={{
+                          backgroundColor: p === currentPage ? '#3d2f20' : '#f5f0e8',
+                          color: p === currentPage ? 'white' : '#6b5744',
+                          transform: p === currentPage ? 'scale(1.1)' : 'scale(1)',
+                        }}
+                      >{p}</button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+      </div>{/* end left column */}
 
       {/* PDF Pages */}
       <div className="flex-1 min-w-0 flex flex-col">
