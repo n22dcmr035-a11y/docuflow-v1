@@ -181,7 +181,6 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'local'>('idle');
 
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
-  const pageGridRef = useRef<HTMLDivElement>(null);
   // Read saved page synchronously so it's available before onDocumentLoad fires
   const savedPage = useRef<number>(localLoadPage(documentId));
   const pageSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -222,13 +221,6 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
       supabaseSavePage(documentId, currentPage);
     }, 2000);
   }, [currentPage, documentId]);
-
-  // ── Auto-scroll page grid to active page button ──
-  useEffect(() => {
-    if (!pageGridRef.current) return;
-    const btn = pageGridRef.current.querySelector(`[data-pgbtn="${currentPage}"]`);
-    btn?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, [currentPage]);
 
   // ── Scroll to page ──
   const scrollToPage = useCallback((p: number) => {
@@ -367,55 +359,57 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
   return (
     <div className="flex gap-3 items-start">
 
-      {/* Unified left sidebar: TOC outline + page grid */}
+      {/* Left TOC */}
       <AnimatePresence initial={false}>
-        {tocOpen && (
-          <motion.div
-            key="leftnav"
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 200, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 36 }}
-            className="flex-shrink-0 overflow-hidden"
-          >
-            <div className="w-[200px] sticky top-[62px] max-h-[calc(100vh-80px)] overflow-y-auto bg-white border border-[#e8e0d0] rounded-2xl shadow-sm flex flex-col">
-              {/* Header */}
-              <div className="px-3 pt-3 pb-2 border-b border-[#f0ebe0] flex items-center justify-between flex-shrink-0">
-                <span className="text-[11px] font-semibold text-[#3d2f20] uppercase tracking-wider font-sans">Điều hướng</span>
+        {tocOpen && toc.length > 0 && (
+          <motion.div key="toc" initial={{ width: 0, opacity: 0 }} animate={{ width: 216, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 36 }} className="flex-shrink-0 overflow-hidden">
+            <div className="w-[216px] sticky top-[62px] max-h-[calc(100vh-80px)] overflow-y-auto bg-white border border-[#e8e0d0] rounded-2xl shadow-sm">
+              <div className="px-3 pt-3 pb-2 border-b border-[#f0ebe0] flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-[#3d2f20] uppercase tracking-wider font-sans">Mục lục</span>
                 <button onClick={() => setTocOpen(false)} className="text-[#c0b0a0] hover:text-[#6b5744] text-xs">✕</button>
               </div>
+              <ul className="py-2 px-1">{toc.map((item, i) => <TocNode key={i} item={item} />)}</ul>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-              {/* TOC outline (only if PDF has bookmarks) */}
+      {/* Left: Page Navigator (below TOC) */}
+      <AnimatePresence initial={false}>
+        {pageNavOpen && numPages > 0 && (
+          <motion.div key="pagenav" initial={{ width: 0, opacity: 0 }} animate={{ width: 180, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 36 }} className="flex-shrink-0 overflow-hidden">
+            <div className="w-[180px] sticky top-[62px] max-h-[calc(100vh-80px)] overflow-y-auto bg-white border border-[#e8e0d0] rounded-2xl shadow-sm">
+              <div className="px-3 pt-3 pb-2 border-b border-[#f0ebe0] flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-[#3d2f20] uppercase tracking-wider font-sans">Trang</span>
+                <button onClick={() => setPageNavOpen(false)} className="text-[#c0b0a0] hover:text-[#6b5744] text-xs">✕</button>
+              </div>
               {toc.length > 0 && (
-                <div className="border-b border-[#f0ebe0]">
-                  <p className="text-[10px] uppercase tracking-wider text-[#b0a090] px-3 pt-2 pb-1 font-sans">Mục lục</p>
-                  <ul className="pb-2 px-1">{toc.map((item, i) => <TocNode key={i} item={item} />)}</ul>
+                <div className="border-b border-[#f0ebe0] py-2 px-2">
+                  <p className="text-[10px] uppercase tracking-wider text-[#b0a090] px-1 mb-1 font-sans">Chương</p>
+                  {toc.slice(0, 20).map((item, i) => (
+                    <button key={i} onClick={() => scrollToPage(item.pageNum)}
+                      className="w-full text-left flex items-baseline gap-1 px-1 py-0.5 rounded-lg hover:bg-[#f5f0e8] transition-colors group">
+                      <span className="flex-1 text-[11px] text-[#6b5744] group-hover:text-[#3d2f20] line-clamp-1">{item.title}</span>
+                      <span className="text-[9px] text-[#c0b0a0] flex-shrink-0">{item.pageNum}</span>
+                    </button>
+                  ))}
                 </div>
               )}
-
-              {/* Page grid — auto-scrolls to current page */}
-              <div className="flex-1 overflow-y-auto p-2" ref={pageGridRef}>
+              <div className="p-2">
                 <p className="text-[10px] uppercase tracking-wider text-[#b0a090] px-1 mb-2 font-sans">Tất cả trang</p>
                 <div className="grid grid-cols-4 gap-1">
-                  {numPages > 0
-                    ? Array.from({ length: numPages }, (_, i) => i + 1).map(p => (
-                      <button
-                        key={p}
-                        data-pgbtn={p}
-                        onClick={() => scrollToPage(p)}
-                        className="aspect-square flex items-center justify-center rounded-lg text-[10px] font-sans font-medium transition-all duration-200"
-                        style={{
-                          backgroundColor: p === currentPage ? '#3d2f20' : '#f5f0e8',
-                          color: p === currentPage ? 'white' : '#6b5744',
-                          transform: p === currentPage ? 'scale(1.15)' : 'scale(1)',
-                          boxShadow: p === currentPage ? '0 2px 8px rgba(61,47,32,0.3)' : 'none',
-                        }}
-                      >
-                        {p}
-                      </button>
-                    ))
-                    : <p className="col-span-4 text-[10px] text-[#c0b0a0] text-center py-4">Đang tải…</p>
-                  }
+                  {Array.from({ length: numPages }, (_, i) => i + 1).map(p => (
+                    <button key={p} onClick={() => scrollToPage(p)}
+                      className="aspect-square flex items-center justify-center rounded-lg text-[10px] font-sans font-medium transition-all"
+                      style={{
+                        backgroundColor: p === currentPage ? '#3d2f20' : '#f5f0e8',
+                        color: p === currentPage ? 'white' : '#6b5744',
+                        transform: p === currentPage ? 'scale(1.1)' : 'scale(1)',
+                      }}
+                    >{p}</button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -427,12 +421,11 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Toolbar */}
         <div className="sticky top-[62px] z-10 flex items-center gap-2 bg-white/90 backdrop-blur border border-[#e8e0d0] rounded-2xl px-3 py-2 shadow-md mb-5">
-          <button onClick={() => setTocOpen(o => !o)}
-            className="text-xs px-2.5 py-1.5 rounded-xl transition-colors font-sans"
-            style={{ backgroundColor: tocOpen ? '#bfdbfe' : '#f5f0e8', color: '#1e3a8a' }}
-          >
-            ☰ Điều hướng
-          </button>
+          {toc.length > 0 && (
+            <button onClick={() => setTocOpen(o => !o)} className="text-xs px-2.5 py-1.5 rounded-xl hover:bg-[#f5f0e8] text-[#6b5744] transition-colors font-sans">
+              ☰ TOC
+            </button>
+          )}
           <span className="text-sm font-sans text-[#9c8870] flex-1 text-center">
             Trang <strong className="text-[#3d2f20]">{currentPage}</strong>{numPages ? ` / ${numPages}` : ''}
           </span>
@@ -506,7 +499,6 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
           </Document>
         </div>
       </div>
-
 
       {/* Notes Drawer */}
       <AnimatePresence>
