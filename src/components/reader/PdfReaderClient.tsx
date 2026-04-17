@@ -49,6 +49,7 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
   const [annotations, setAnnotations] = useState<PdfAnnotation[]>([]);
   const [toc, setToc] = useState<TocItem[]>([]);
   const [tocOpen, setTocOpen] = useState(true);
+  const [pageNavOpen, setPageNavOpen] = useState(true);
   const [notesOpen, setNotesOpen] = useState(false);
   const [activeColor, setActiveColor] = useState('yellow');
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string; pageNum: number; rects: HRect[] } | null>(null);
@@ -205,6 +206,14 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
               <span className="bg-[#3d2f20] text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]">{annotations.length}</span>
             )}
           </button>
+          <button
+            onClick={() => setPageNavOpen(o => !o)}
+            className="text-xs px-2.5 py-1.5 rounded-xl transition-colors font-sans"
+            style={{ backgroundColor: pageNavOpen ? '#bfdbfe' : '#f5f0e8', color: '#1e3a8a' }}
+            title="Bảng điều hướng trang"
+          >
+            ☰ Trang
+          </button>
         </div>
 
         {/* Pages — centered */}
@@ -282,6 +291,65 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
           </Document>
         </div>
       </div>
+
+      {/* Right: Page Navigator */}
+      <AnimatePresence initial={false}>
+        {pageNavOpen && numPages > 0 && (
+          <motion.div
+            key="pagenav"
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 180, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 36 }}
+            className="flex-shrink-0 overflow-hidden"
+          >
+            <div className="w-[180px] sticky top-[62px] max-h-[calc(100vh-80px)] overflow-y-auto bg-white border border-[#e8e0d0] rounded-2xl shadow-sm">
+              <div className="px-3 pt-3 pb-2 border-b border-[#f0ebe0] flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-[#3d2f20] uppercase tracking-wider font-sans">Trang</span>
+                <button onClick={() => setPageNavOpen(false)} className="text-[#c0b0a0] hover:text-[#6b5744] text-xs">✕</button>
+              </div>
+
+              {/* Chapter TOC if available */}
+              {toc.length > 0 && (
+                <div className="border-b border-[#f0ebe0] py-2 px-2">
+                  <p className="text-[10px] uppercase tracking-wider text-[#b0a090] px-1 mb-1 font-sans">Chương</p>
+                  {toc.slice(0, 20).map((item, i) => (
+                    <button
+                      key={i}
+                      onClick={() => scrollToPage(item.pageNum)}
+                      className="w-full text-left flex items-baseline gap-1 px-1 py-0.5 rounded-lg hover:bg-[#f5f0e8] transition-colors group"
+                    >
+                      <span className="flex-1 text-[11px] text-[#6b5744] group-hover:text-[#3d2f20] line-clamp-1 leading-snug">{item.title}</span>
+                      <span className="text-[9px] text-[#c0b0a0] flex-shrink-0">{item.pageNum}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Page number grid */}
+              <div className="p-2">
+                <p className="text-[10px] uppercase tracking-wider text-[#b0a090] px-1 mb-2 font-sans">Tất cả trang</p>
+                <div className="grid grid-cols-4 gap-1">
+                  {Array.from({ length: numPages }, (_, i) => i + 1).map(p => (
+                    <button
+                      key={p}
+                      onClick={() => scrollToPage(p)}
+                      className="aspect-square flex items-center justify-center rounded-lg text-[10px] font-sans font-medium transition-all"
+                      style={{
+                        backgroundColor: p === currentPage ? '#3d2f20' : '#f5f0e8',
+                        color: p === currentPage ? 'white' : '#6b5744',
+                        transform: p === currentPage ? 'scale(1.1)' : 'scale(1)',
+                      }}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Notes Drawer */}
       <AnimatePresence>
