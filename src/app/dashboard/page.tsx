@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { CurrentlyReading } from '@/components/dashboard/CurrentlyReading';
@@ -13,11 +14,18 @@ import { getCoverColor } from '@/lib/utils';
 import { DEMO_DOCS } from '@/lib/demoData';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [search, setSearch] = useState('');
   const [isDemo, setIsDemo] = useState(false);
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    if (supabase) await supabase.auth.signOut();
+    router.push('/auth');
+  };
 
   const fetchDocuments = useCallback(async () => {
     setLoading(true);
@@ -57,7 +65,8 @@ export default function DashboardPage() {
 
   const handleUpload = async (file: File) => {
     if (isDemo) {
-      // Demo mode: just close the modal
+      // Demo mode: show alert and close the modal
+      alert('Chức năng tải file đang bị vô hiệu hoá ở màn hình Demo. Vui lòng cài đặt thông tin Supabase của bạn vào file .env.local để bật tính năng này!');
       setShowUpload(false);
       return;
     }
@@ -139,6 +148,14 @@ export default function DashboardPage() {
               <span className="hidden sm:inline text-[10px] uppercase tracking-widest font-semibold bg-[#fef08a] text-[#3d2f20] px-2.5 py-1 rounded-full">
                 Demo Mode
               </span>
+            )}
+            {!isDemo && (
+              <button
+                onClick={handleSignOut}
+                className="hidden sm:block text-xs font-sans text-[#9c8870] hover:text-[#3d2f20] transition-colors px-2 py-1"
+              >
+                Sign Out
+              </button>
             )}
             <Button
               variant="primary"
