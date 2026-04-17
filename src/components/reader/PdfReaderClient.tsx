@@ -184,6 +184,9 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
   // Read saved page synchronously so it's available before onDocumentLoad fires
   const savedPage = useRef<number>(localLoadPage(documentId));
   const pageSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Page navigator auto-scroll
+  const pageNavScrollRef = useRef<HTMLDivElement>(null);
+  const pageButtonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
 
   // ── On mount: try to load from Supabase (overrides localStorage if found) ──
   useEffect(() => {
@@ -221,6 +224,14 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
       supabaseSavePage(documentId, currentPage);
     }, 2000);
   }, [currentPage, documentId]);
+
+  // ── Auto-scroll page navigator to keep current page visible ──
+  useEffect(() => {
+    const btn = pageButtonRefs.current.get(currentPage);
+    if (btn && pageNavScrollRef.current) {
+      btn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [currentPage]);
 
   // ── Scroll to page ──
   const scrollToPage = useCallback((p: number) => {
@@ -463,7 +474,10 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
         {pageNavOpen && numPages > 0 && (
           <motion.div key="pagenav" initial={{ width: 0, opacity: 0 }} animate={{ width: 180, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 36 }} className="flex-shrink-0 overflow-hidden">
-            <div className="w-[180px] sticky top-[62px] max-h-[calc(100vh-80px)] overflow-y-auto bg-white border border-[#e8e0d0] rounded-2xl shadow-sm">
+            <div
+              ref={pageNavScrollRef}
+              className="w-[180px] sticky top-[62px] max-h-[calc(100vh-80px)] overflow-y-auto bg-white border border-[#e8e0d0] rounded-2xl shadow-sm"
+            >
               <div className="px-3 pt-3 pb-2 border-b border-[#f0ebe0] flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-[#3d2f20] uppercase tracking-wider font-sans">Trang</span>
                 <button onClick={() => setPageNavOpen(false)} className="text-[#c0b0a0] hover:text-[#6b5744] text-xs">✕</button>
@@ -484,12 +498,16 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
                 <p className="text-[10px] uppercase tracking-wider text-[#b0a090] px-1 mb-2 font-sans">Tất cả trang</p>
                 <div className="grid grid-cols-4 gap-1">
                   {Array.from({ length: numPages }, (_, i) => i + 1).map(p => (
-                    <button key={p} onClick={() => scrollToPage(p)}
-                      className="aspect-square flex items-center justify-center rounded-lg text-[10px] font-sans font-medium transition-all"
+                    <button
+                      key={p}
+                      ref={el => { if (el) pageButtonRefs.current.set(p, el); }}
+                      onClick={() => scrollToPage(p)}
+                      className="aspect-square flex items-center justify-center rounded-lg text-[10px] font-sans font-medium transition-all duration-200"
                       style={{
                         backgroundColor: p === currentPage ? '#3d2f20' : '#f5f0e8',
                         color: p === currentPage ? 'white' : '#6b5744',
-                        transform: p === currentPage ? 'scale(1.1)' : 'scale(1)',
+                        transform: p === currentPage ? 'scale(1.15)' : 'scale(1)',
+                        boxShadow: p === currentPage ? '0 2px 8px rgba(61,47,32,0.3)' : 'none',
                       }}
                     >{p}</button>
                   ))}
