@@ -359,6 +359,42 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
   return (
     <div className="flex gap-3 items-start">
 
+      {/* Far-left toggle tabs (show/hide sidebars) */}
+      <div className="flex flex-col gap-2 sticky top-[62px] flex-shrink-0">
+        {/* TOC tab — only when PDF has outline */}
+        {toc.length > 0 && (
+          <button
+            onClick={() => setTocOpen(o => !o)}
+            title={tocOpen ? 'Ẩn mục lục' : 'Hiện mục lục'}
+            className="w-7 flex flex-col items-center justify-center gap-1 py-3 rounded-xl border transition-colors font-sans"
+            style={{
+              backgroundColor: tocOpen ? '#3d2f20' : '#f5f0e8',
+              borderColor: tocOpen ? '#3d2f20' : '#e8e0d0',
+              color: tocOpen ? 'white' : '#6b5744',
+            }}
+          >
+            <span className="text-[10px]">{tocOpen ? '◀' : '▶'}</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wider" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Mục lục</span>
+          </button>
+        )}
+        {/* Page nav tab */}
+        {numPages > 0 && (
+          <button
+            onClick={() => setPageNavOpen(o => !o)}
+            title={pageNavOpen ? 'Ẩn trang' : 'Hiện trang'}
+            className="w-7 flex flex-col items-center justify-center gap-1 py-3 rounded-xl border transition-colors font-sans"
+            style={{
+              backgroundColor: pageNavOpen ? '#1e3a8a' : '#f5f0e8',
+              borderColor: pageNavOpen ? '#1e3a8a' : '#e8e0d0',
+              color: pageNavOpen ? 'white' : '#6b5744',
+            }}
+          >
+            <span className="text-[10px]">{pageNavOpen ? '◀' : '▶'}</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wider" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Trang</span>
+          </button>
+        )}
+      </div>
+
       {/* Left TOC */}
       <AnimatePresence initial={false}>
         {tocOpen && toc.length > 0 && (
@@ -441,12 +477,6 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
           >
             📝 Ghi chú
             {annotations.length > 0 && <span className="bg-[#3d2f20] text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]">{annotations.length}</span>}
-          </button>
-          <button onClick={() => setPageNavOpen(o => !o)}
-            className="text-xs px-2.5 py-1.5 rounded-xl transition-colors font-sans"
-            style={{ backgroundColor: pageNavOpen ? '#bfdbfe' : '#f5f0e8', color: '#1e3a8a' }}
-          >
-            ☰ Trang
           </button>
         </div>
 
