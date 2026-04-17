@@ -24,6 +24,7 @@ create table if not exists reading_progress (
   user_id uuid references auth.users on delete cascade not null,
   document_id uuid references documents on delete cascade not null,
   scroll_pct integer default 0 check (scroll_pct between 0 and 100),
+  current_page integer default 1,
   last_read timestamptz default now(),
   unique (user_id, document_id)
 );
@@ -33,12 +34,16 @@ create table if not exists annotations (
   user_id uuid references auth.users on delete cascade not null,
   document_id uuid references documents on delete cascade not null,
   highlighted_text text not null,
+  -- position stores: { rects: HRect[], pageNum: number }
   position jsonb not null,
   color text default 'yellow' check (color in ('yellow', 'green', 'blue', 'pink')),
   note_content text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+-- Add current_page to existing tables (safe to run on existing DB)
+alter table reading_progress add column if not exists current_page integer default 1;
 
 -- ─────────────────────────────────────────────────────────────
 -- Row Level Security
