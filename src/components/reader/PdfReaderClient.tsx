@@ -165,6 +165,8 @@ async function supabaseSavePage(docId: string, page: number) {
 
 /* ─── Component ─────────────────────────────────────────────────── */
 
+const RENDER_WINDOW = 5; // pages before/after current to keep rendered
+
 export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
   // Initialize annotations from localStorage synchronously — no race condition
   const [annotations, setAnnotations] = useState<PdfAnnotation[]>(() => localLoadAnnotations(documentId));
@@ -184,6 +186,10 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
   // Read saved page synchronously so it's available before onDocumentLoad fires
   const savedPage = useRef<number>(localLoadPage(documentId));
   const pageSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [renderedPages, setRenderedPages] = useState<Set<number>>(() => new Set([1, 2, 3, 4, 5]));
+  const [pageHeights, setPageHeights] = useState<Map<number, number>>(new Map());
+  const defaultPageHeight = useRef(1260);
 
   // ── On mount: try to load from Supabase (overrides localStorage if found) ──
   useEffect(() => {
@@ -205,6 +211,20 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
     }).catch(() => setSyncStatus('local'));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId]);
+
+  useEffect(() => {
+    if (numPages < 1) return;
+    const start = Math.max(1, currentPage - RENDER_WINDOW);
+    const end   = Math.min(numPages, currentPage + RENDER_WINDOW);
+    setRenderedPages(prev => {
+      const next = new Set<number>();
+      for (const p of prev) {
+        if (Math.abs(p - currentPage) <= RENDER_WINDOW * 2) next.add(p);
+      }
+      for (let i = start; i <= end; i++) next.add(i);
+      return next;
+    });
+  }, [currentPage, numPages]);
 
   // ── Save annotations to localStorage whenever they change ──
   useEffect(() => {
@@ -491,29 +511,48 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
             loading={<div className="flex items-center justify-center h-96 text-[#b0a090] font-sans text-sm">Đang tải PDF…</div>}
             error={<div className="text-center text-red-500 font-sans text-sm p-8 bg-red-50 rounded-2xl">Không thể tải PDF.</div>}
           >
-            {Array.from({ length: numPages }, (_, i) => i + 1).map(pageNum => {
+                  {Array.from({ length: numPages }, (_, i) => i + 1).map(pageNum => {
               const pageAnns = annotations.filter(a => a.pageNum === pageNum);
+              const isRendered = renderedPages.has(pageNum);
+              const estH = pageHeights.get(pageNum) ?? defaultPageHeight.current;
               return (
                 <div key={pageNum} data-page={pageNum}
                   ref={el => { if (el) pageRefs.current.set(pageNum, el); }}
                   onMouseUp={() => handleMouseUp(pageNum)}
                   className="relative mb-5 cursor-text"
-                  style={{ width: 'fit-content' }}
+                  style={{ width: isRendered ? 'fit-content' : defaultPageHeight.current * 0.707 }}
                 >
-                  <div className="rounded-2xl overflow-hidden shadow-[0_2px_16px_rgba(60,40,20,0.08)]">
-                    <Page pageNumber={pageNum} scale={scale} />
-                    {pageAnns.map(ann => {
-                      const c = COLORS.find(x => x.key === ann.color) ?? COLORS[0];
-                      return ann.rects.map((r, i) => (
-                        <div key={`${ann.id}-${i}`} style={{
-                          position: 'absolute', left: `${r.x}%`, top: `${r.y}%`,
-                          width: `${r.w}%`, height: `${r.h}%`,
-                          backgroundColor: c.bg, pointerEvents: 'none',
-                          mixBlendMode: 'multiply', borderRadius: 2,
-                        }} />
-                      ));
-                    })}
-                  </div>
+                  {isRendered ? (
+                    <div className="rounded-2xl overflow-hidden shadow-[0_2px_16px_rgba(60,40,20,0.08)] relative">
+                      <Page
+                        pageNumber={pageNum}
+                        scale={scale}
+                        renderAnnotationLayer={false}
+                        onRenderSuccess={p => {
+                          const h = Math.round(p.height);
+                          setPageHeights(prev => { const m = new Map(prev); m.set(pageNum, h); return m; });
+                          if (pageNum === 1) defaultPageHeight.current = h;
+                        }}
+                      />
+                      {pageAnns.map(ann => {
+                        const c = COLORS.find(x => x.key === ann.color) ?? COLORS[0];
+                        return ann.rects.map((r, i) => (
+                          <div key={`${ann.id}-${i}`} style={{
+                            position: 'absolute', left: `${r.x}%`, top: `${r.y}%`,
+                            width: `${r.w}%`, height: `${r.h}%`,
+                            backgroundColor: c.bg, pointerEvents: 'none',
+                            mixBlendMode: 'multiply', borderRadius: 2,
+                          }} />
+                        ));
+                      })}
+                    </div>
+                  ) : (
+                    /* Placeholder keeps correct height so scroll position is stable */
+                    <div
+                      className="rounded-2xl bg-[#f5f0e8] animate-pulse"
+                      style={{ width: Math.round(estH * 0.707), height: estH }}
+                    />
+                  )}
                   {pageAnns.map(ann => {
                     const c = COLORS.find(x => x.key === ann.color) ?? COLORS[0];
                     return (
