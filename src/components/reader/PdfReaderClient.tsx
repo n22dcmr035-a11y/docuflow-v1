@@ -377,10 +377,9 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
   const syncIcon = syncStatus === 'synced' ? '☁️' : syncStatus === 'syncing' ? '⏳' : syncStatus === 'local' ? '💾' : '';
 
   return (
-    <div className="flex gap-3 items-start">
-
+    <div className="flex flex-col md:flex-row gap-3 items-start relative px-1 md:px-0">
       {/* Left column: tabs + panels — all sticky together */}
-      <div className="sticky top-[62px] flex gap-2 flex-shrink-0 items-start max-h-[calc(100vh-80px)]">
+      <div className="md:sticky md:top-[62px] hidden md:flex gap-2 flex-shrink-0 items-start max-h-[calc(100vh-80px)]">
 
         {/* Vertical toggle tabs */}
         <div className="flex flex-col gap-2 flex-shrink-0">
@@ -479,28 +478,29 @@ export function PdfReaderClient({ url, documentId }: PdfReaderClientProps) {
       </div>{/* end left column */}
 
       {/* PDF Pages */}
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col w-full">
         {/* Toolbar */}
-        <div className="sticky top-[62px] z-10 flex items-center gap-2 bg-white/90 backdrop-blur border border-[#e8e0d0] rounded-2xl px-3 py-2 shadow-md mb-5">
+        <div className="sticky top-[62px] z-10 flex flex-wrap md:flex-nowrap items-center gap-2 bg-white/95 backdrop-blur border border-[#e8e0d0] rounded-2xl px-3 py-2 shadow-sm mb-5">
           {toc.length > 0 && (
-            <button onClick={() => setTocOpen(o => !o)} className="text-xs px-2.5 py-1.5 rounded-xl hover:bg-[#f5f0e8] text-[#6b5744] transition-colors font-sans">
+            <button onClick={() => setTocOpen(o => !o)} className="md:hidden text-xs px-2.5 py-1.5 rounded-xl bg-[#f5f0e8] text-[#6b5744] transition-colors font-sans whitespace-nowrap">
               ☰ TOC
             </button>
           )}
-          <span className="text-sm font-sans text-[#9c8870] flex-1 text-center">
+          <span className="text-xs md:text-sm font-sans text-[#9c8870] flex-1 text-center whitespace-nowrap">
             Trang <strong className="text-[#3d2f20]">{currentPage}</strong>{numPages ? ` / ${numPages}` : ''}
           </span>
-          {syncIcon && <span title={syncStatus} className="text-sm">{syncIcon}</span>}
-          <div className="flex items-center gap-1">
-            <button onClick={zoomOut} className="w-7 h-7 flex items-center justify-center rounded-xl hover:bg-[#f5f0e8] text-[#6b5744]">−</button>
+          {syncIcon && <span title={syncStatus} className="text-sm scale-75 md:scale-100">{syncIcon}</span>}
+          <div className="flex items-center gap-1 scale-90 md:scale-100 origin-right">
+            <button onClick={zoomOut} className="w-7 h-7 flex items-center justify-center rounded-xl bg-[#f5f0e8] hover:bg-[#e8e0d0] text-[#6b5744]">−</button>
             <span className="text-xs text-[#9c8870] w-10 text-center">{Math.round(scale * 100)}%</span>
-            <button onClick={zoomIn}  className="w-7 h-7 flex items-center justify-center rounded-xl hover:bg-[#f5f0e8] text-[#6b5744]">+</button>
+            <button onClick={zoomIn}  className="w-7 h-7 flex items-center justify-center rounded-xl bg-[#f5f0e8] hover:bg-[#e8e0d0] text-[#6b5744]">+</button>
           </div>
           <button onClick={() => setNotesOpen(o => !o)}
-            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl transition-colors font-sans"
+            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl transition-colors font-sans whitespace-nowrap overflow-hidden"
             style={{ backgroundColor: notesOpen ? '#fef08a' : '#f5f0e8', color: '#6b5744' }}
           >
-            📝 Ghi chú
+            <span className="hidden sm:inline">📝 Ghi chú</span>
+            <span className="sm:hidden">📝</span>
             {annotations.length > 0 && <span className="bg-[#3d2f20] text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]">{annotations.length}</span>}
           </button>
         </div>
