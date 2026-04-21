@@ -71,7 +71,7 @@ async function resolveOutline(
     try {
       let dest = item.dest;
       if (typeof dest === 'string') dest = await pdf.getDestination(dest);
-      if (Array.isArray(dest) && dest[0]) pageNum = await pdf.getPageIndex(dest[0] as object) + 1;
+      if (Array.isArray(dest) && dest[0]) pageNum = await pdf.getPageIndex(dest[0] as { num: number; gen: number }) + 1;
     } catch { /* */ }
     const children = item.items && (item.items as typeof outline).length > 0
       ? await resolveOutline(item.items as typeof outline, pdf, level + 1) : [];
