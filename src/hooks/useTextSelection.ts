@@ -76,7 +76,7 @@ export function serializeRange(
     const path: number[] = [];
     let current: Node | null = node;
     while (current && current !== container) {
-      const parent = current.parentNode;
+      const parent: Node | null = current.parentNode;
       if (!parent) break;
       path.unshift(Array.from(parent.childNodes).indexOf(current as ChildNode));
       current = parent;

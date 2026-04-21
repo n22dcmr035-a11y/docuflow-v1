@@ -93,7 +93,7 @@ async function supabaseLoadAnnotations(docId: string): Promise<PdfAnnotation[] |
       .eq('document_id', docId)
       .eq('user_id', user.id);
     if (error || !data) return null;
-    return data.map(r => ({
+    return data.map((r: { id: string; highlighted_text: string; note_content: string | null; color: string | null; position: unknown }) => ({
       id: r.id,
       text: r.highlighted_text,
       note: r.note_content ?? '',
